@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J4 Enterprises QRScanner</title>
+    <script src="html5-qrcode.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background: #B1D8B7;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.25);
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+        }
+
+      .container h1 {
+            color: #333333;
+            margin-bottom: 5px;
+        }
+
+        #my-qr-reader {
+            padding: 20px;
+            border: 1.5px solid #b2b2b2;
+            border-radius: 8px;
+        }
+
+        #result {
+            font-size: 18px;
+            color: #333;
+            background-color: #e7e7e7;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .result {
+            background-color: green;
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            margin-bottom: 20px;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            outline: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #FA26A0;
+            transition: 0.3s background-color;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #008000;
+        }
+
+        @media (max-width: 600px) {
+            .col {
+                max-width: 100%;
+            }
+        }
+
+        #profile-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="color: orange;">J4Enterprises Qr-Scanner</h1>
+		<p style="margin-top: -10px;">for<strong style="color: #FA26A0;"> SUKI</p>
+        <div id="my-qr-reader"></div>
+        <h4>SCAN RESULT</h4>
+        <div id="result">
+            <p><strong>Purchase Code:</strong> <span id="purchase-code">-</span></p>
+            <p><strong>Full Name:</strong> <span id="full-name">-</span></p>
+            <p><strong>Barangay:</strong> <span id="barangay">-</span></p>
+            <img id="profile-img" src="" alt="Profile Image" />
+        </div>
+        <div>
+            <button onclick="copyToClipboard()">Proceed</button>
+            <button onclick="printResult()">Print Result</button>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        let isProcessing = false; // Variable to control scan delay
+
+        function onScanSuccess(qrCodeMessage) {
+            if (isProcessing) return; // Ignore scans during the delay
+            isProcessing = true;
+
+            try {
+                const qrData = JSON.parse(qrCodeMessage);
+                const { Purchase_code, full_name, barangay, facebook_profile_image } = qrData;
+
+                // Update result section with QR data
+                document.getElementById('purchase-code').innerText = Purchase_code;
+                document.getElementById('full-name').innerText = full_name;
+                document.getElementById('barangay').innerText = barangay;
+                document.getElementById('profile-img').src = facebook_profile_image;
+
+                // Voice feedback
+                speak(`Scanned purchase code: ${Purchase_code}, Full name: ${full_name}, Barangay: ${barangay}`);
+
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<span class="result">Invalid QR Code Data</span>`;
+            }
+
+            // 9-second delay before processing the next scan
+            setTimeout(() => {
+                isProcessing = false;
+            }, 9000);
+        }
+
+        function onScanError(errorMessage) {
+            // Handle scan error
+        }
+
+        var html5QrcodeScanner = new Html5QrcodeScanner(
+            "my-qr-reader", { fps: 10, qrbox: 250 }
+        );
+        html5QrcodeScanner.render(onScanSuccess, onScanError);
+
+        // Copy Purchase Code, Full Name, and Barangay to clipboard
+        function copyToClipboard() {
+            const purchaseCode = document.getElementById('purchase-code').innerText;
+            const fullName = document.getElementById('full-name').innerText;
+            const barangay = document.getElementById('barangay').innerText;
+            const textToCopy = `Purchase Code: ${purchaseCode}\nFull Name: ${fullName}\nBarangay: ${barangay}`;
+            
+            const textArea = document.createElement('textarea');
+            textArea.value = textToCopy;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('Copied to clipboard!');
+		// After copying, delay for 2 seconds and then redirect or close
+    setTimeout(() => {
+        if (window.history.length > 1) {
+            window.history.back(); // Go back to the previous page if there is history
+        } else {
+            window.close(); // Close the window if no history is available
+        }
+    }, 2000); // 2-second delay
+        }
+
+        // Print Purchase Code, Full Name, and Barangay
+        function printResult() {
+            const purchaseCode = document.getElementById('purchase-code').innerText;
+            const fullName = document.getElementById('full-name').innerText;
+            const barangay = document.getElementById('barangay').innerText;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`<html><head><title>Print Result</title></head><body>`);
+            printWindow.document.write(`<h3>Scan Result</h3>`);
+            printWindow.document.write(`<p><strong>Purchase Code:</strong> ${purchaseCode}</p>`);
+            printWindow.document.write(`<p><strong>Full Name:</strong> ${fullName}</p>`);
+            printWindow.document.write(`<p><strong>Barangay:</strong> ${barangay}</p>`);
+            printWindow.document.write(`</body></html>`);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        // Function for voice feedback
+        function speak(message) {
+            const speech = new SpeechSynthesisUtterance(message);
+            speech.lang = 'en-US'; // Set language to English
+            speech.rate = 1; // Normal speaking rate
+            window.speechSynthesis.speak(speech);
+        }
+    </script>
+</body>
+</html>
